@@ -119,8 +119,8 @@ CERT_MANAGER_VER := v1.16.3
 # Define Docker related variables. Releases should modify and double check these vars.
 export GCP_PROJECT ?= $(shell gcloud config get-value project)
 REGISTRY ?= gcr.io/$(GCP_PROJECT)
-STAGING_REGISTRY ?= gcr.io/k8s-staging-cluster-api-gcp
-PROD_REGISTRY ?= registry.k8s.io/cluster-api-gcp
+STAGING_REGISTRY ?= ghcr.io/getditto/cluster-api-provider-gcp
+PROD_REGISTRY ?= ghcr.io/getditto/cluster-api-provider-gcp
 IMAGE_NAME ?= cluster-api-gcp-controller
 STAGING_BUCKET ?= k8s-staging-cluster-api-gcp
 BUCKET ?= $(STAGING_BUCKET)
