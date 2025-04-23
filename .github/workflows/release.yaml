@@ -73,6 +73,7 @@ jobs:
           echo "Release branch is: $RELEASE_BRANCH"
           echo "Release tag is: $RELEASE_TAG"
           make release-manifests
+          make release-metadata
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
