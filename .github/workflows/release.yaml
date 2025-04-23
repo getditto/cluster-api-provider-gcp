@@ -51,6 +51,9 @@ jobs:
   release:
     name: Create draft release
     runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}/cluster-api-gcp-controller
     steps:
       - name: checkout code
         uses: actions/checkout@v4
