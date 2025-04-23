@@ -72,7 +72,7 @@ jobs:
           echo "Previous version is: $PREVIOUS_VERSION"
           echo "Release branch is: $RELEASE_BRANCH"
           echo "Release tag is: $RELEASE_TAG"
-          make set-manifest-image MANIFEST_IMG=$(REGISTRY)/$(IMAGE_NAME) MANIFEST_TAG=$(RELEASE_TAG)
+          make set-manifest-image MANIFEST_IMG=$REGISTRY/$IMAGE_NAME MANIFEST_TAG=$RELEASE_TAG
           make set-manifest-pull-policy PULL_POLICY=IfNotPresent
           make release-manifests
           make release-metadata
