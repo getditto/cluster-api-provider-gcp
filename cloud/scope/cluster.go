@@ -24,6 +24,7 @@ import (
 
 	"github.com/pkg/errors"
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/storage/v1"
 	"k8s.io/utils/ptr"
 	infrav1 "sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud"
@@ -418,4 +419,9 @@ func (s *ClusterScope) PatchObject() error {
 // Close closes the current scope persisting the cluster configuration and status.
 func (s *ClusterScope) Close() error {
 	return s.PatchObject()
+}
+
+// StorageService returns the Google Cloud Storage client.
+func (s *ClusterScope) StorageService() *storage.Service {
+	return s.GCPServices.Storage
 }

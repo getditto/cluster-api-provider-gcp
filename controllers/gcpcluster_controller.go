@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud/services/compute/loadbalancers"
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud/services/compute/networks"
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud/services/compute/subnets"
+	"sigs.k8s.io/cluster-api-provider-gcp/cloud/services/storage"
 	"sigs.k8s.io/cluster-api-provider-gcp/util/reconciler"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
@@ -203,6 +204,7 @@ func (r *GCPClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		// Reconcile subnets before loadbalancers since subnet is needed for internal LB
 		subnets.New(clusterScope),
 		loadbalancers.New(clusterScope),
+		storage.New(clusterScope),
 	}
 
 	for _, r := range reconcilers {
@@ -235,6 +237,7 @@ func (r *GCPClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		subnets.New(clusterScope),
 		firewalls.New(clusterScope),
 		networks.New(clusterScope),
+		storage.New(clusterScope),
 	}
 
 	for _, r := range reconcilers {

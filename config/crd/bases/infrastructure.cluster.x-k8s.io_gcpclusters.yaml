@@ -108,6 +108,21 @@ spec:
                 items:
                   type: string
                 type: array
+              gcsBucket:
+                description: |-
+                  GCSBucket contains options to configure a supporting GCS bucket for this
+                  cluster - Used for publishing Service Account signing JWKS documents to enable
+                  Workload Identity Federation (requires WorkloadIDFederation feature flag to be enabled).
+                properties:
+                  name:
+                    description: Name is the name of the GCS bucket to be created.
+                    maxLength: 63
+                    minLength: 3
+                    pattern: ^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$
+                    type: string
+                required:
+                - name
+                type: object
               loadBalancer:
                 description: LoadBalancer contains configuration for one or more LoadBalancers.
                 properties:
@@ -350,6 +365,12 @@ spec:
                   resourceManager:
                     description: ResourceManagerServiceEndpoint is the custom endpoint
                       url for the Resource Manager Service
+                    format: uri
+                    pattern: ^https://
+                    type: string
+                  storage:
+                    description: StorageServiceEndpoint is the custom endpoint url
+                      for the Resource Manager Service
                     format: uri
                     pattern: ^https://
                     type: string
