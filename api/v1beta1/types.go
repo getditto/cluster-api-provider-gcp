@@ -372,3 +372,12 @@ type LoadBalancer struct {
 	// used.
 	Subnet *string `json:"subnet,omitempty"`
 }
+
+// Bucket is the configuration for a GCS bucket.
+type Bucket struct {
+	// Name is the name of the GCS bucket to be created.
+	// +kubebuilder:validation:MinLength:=3
+	// +kubebuilder:validation:MaxLength:=63
+	// +kubebuilder:validation:Pattern=`^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$`
+	Name string `json:"name"`
+}

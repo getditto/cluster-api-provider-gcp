@@ -73,6 +73,12 @@ type GCPClusterSpec struct {
 	// For instance, the user can specify a new endpoint for the compute service.
 	// +optional
 	ServiceEndpoints *ServiceEndpoints `json:"serviceEndpoints,omitempty"`
+
+	// Bucket contains options to configure a supporting GCS bucket for this
+	// cluster - Used for publishing Service Account signing JWKS documents to enable
+	// Workload Identity Federation (requires WorkloadIDFederation feature flag to be enabled).
+	// +optional
+	Bucket *Bucket `json:"bucket,omitempty"`
 }
 
 // GCPClusterStatus defines the observed state of GCPCluster.

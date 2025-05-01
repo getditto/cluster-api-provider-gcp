@@ -30,6 +30,11 @@ const (
 	// owner: @richardchen331 & @richardcase
 	// alpha: v0.1
 	GKE featuregate.Feature = "GKE"
+
+	// WorkloadIDFederation will allow a user to enable Workload Identity Federation for unmanaged (e.g. kubeadm) clusters.
+	// owner: @sl1pm4t
+	// alpha: v1.10
+	WorkloadIDFederation featuregate.Feature = "WorkloadIDFederation"
 )
 
 func init() {
@@ -39,5 +44,6 @@ func init() {
 // defaultCAPGFeatureGates consists of all known capg-specific feature keys.
 // To add a new feature, define a key for it above and add it here.
 var defaultCAPGFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
-	GKE: {Default: false, PreRelease: featuregate.Alpha},
+	GKE:                  {Default: false, PreRelease: featuregate.Alpha},
+	WorkloadIDFederation: {Default: false, PreRelease: featuregate.Alpha},
 }

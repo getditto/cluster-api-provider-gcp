@@ -17,9 +17,15 @@ limitations under the License.
 package v1beta1
 
 import (
+	"reflect"
 	"testing"
 
+	"k8s.io/component-base/featuregate"
+	utilfeature "k8s.io/component-base/featuregate/testing"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/cluster-api-provider-gcp/feature"
 )
 
 func TestGCPCluster_ValidateUpdate(t *testing.T) {
@@ -96,6 +102,68 @@ func TestGCPCluster_ValidateUpdate(t *testing.T) {
 				g.Expect(err).NotTo(HaveOccurred())
 			}
 			g.Expect(warn).To(BeNil())
+		})
+	}
+}
+
+func TestGCPCluster_ValidateCreate(t *testing.T) {
+	tests := []struct {
+		name            string
+		newCluster      *GCPCluster
+		enabledFeatures []featuregate.Feature
+		want            admission.Warnings
+		wantErr         bool
+	}{
+		{
+			name: "Bucket set when WorkloadIDFederation is disabled",
+			newCluster: &GCPCluster{
+				Spec: GCPClusterSpec{
+					Bucket: &Bucket{Name: "my-bucket"},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Bucket nil",
+			newCluster: &GCPCluster{
+				Spec: GCPClusterSpec{
+					Network: NetworkSpec{
+						Mtu: int64(1500),
+					},
+				},
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "Bucket set and WorkloadIDFederation enabled",
+			newCluster: &GCPCluster{
+				Spec: GCPClusterSpec{
+					Bucket: &Bucket{Name: "my-bucket"},
+				},
+			},
+			enabledFeatures: []featuregate.Feature{
+				feature.WorkloadIDFederation,
+			},
+			want:    nil,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, enabled := range tt.enabledFeatures {
+				utilfeature.SetFeatureGateDuringTest(t, feature.Gates, enabled, true)
+			}
+
+			got, err := tt.newCluster.ValidateCreate()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateCreate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ValidateCreate() got = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
