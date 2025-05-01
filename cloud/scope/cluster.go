@@ -24,9 +24,12 @@ import (
 
 	"github.com/pkg/errors"
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/iam/v1"
+	"google.golang.org/api/storage/v1"
 	"k8s.io/utils/ptr"
 	infrav1 "sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud"
+	"sigs.k8s.io/cluster-api-provider-gcp/feature"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,6 +62,21 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 		params.GCPServices.Compute = computeSvc
 	}
 
+	if feature.Gates.Enabled(feature.WorkloadIDFederation) && params.GCPServices.Storage == nil {
+		iamSvc, err := newIAMService(ctx, params.GCPCluster.Spec.CredentialsRef, params.Client, params.GCPCluster.Spec.ServiceEndpoints)
+		if err != nil {
+			return nil, errors.Errorf("failed to create gcp iam client: %v", err)
+		}
+		params.GCPServices.IAM = iamSvc
+
+		storageSvc, err := newStorageService(ctx, params.GCPCluster.Spec.CredentialsRef, params.Client, params.GCPCluster.Spec.ServiceEndpoints)
+		if err != nil {
+			return nil, errors.Errorf("failed to create gcp storage client: %v", err)
+		}
+
+		params.GCPServices.Storage = storageSvc
+	}
+
 	helper, err := patch.NewHelper(params.GCPCluster, params.Client)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init patch helper")
@@ -84,6 +102,11 @@ type ClusterScope struct {
 }
 
 // ANCHOR: ClusterGetter
+
+// Bucket returns the Bucket of the cluster.
+func (s *ClusterScope) Bucket() *infrav1.Bucket {
+	return s.GCPCluster.Spec.Bucket
+}
 
 // Cloud returns initialized cloud.
 func (s *ClusterScope) Cloud() cloud.Cloud {
@@ -430,4 +453,65 @@ func (s *ClusterScope) PatchObject() error {
 // Close closes the current scope persisting the cluster configuration and status.
 func (s *ClusterScope) Close() error {
 	return s.PatchObject()
+}
+
+// StorageService returns the Google Cloud Storage client.
+func (s *ClusterScope) StorageService() *storage.Service {
+	return s.GCPServices.Storage
+}
+
+// ManagementClient returns the Kubernetes Client for the management cluster.
+func (s *ClusterScope) ManagementClient() client.Client {
+	return s.client
+}
+
+// IAMService returns the Google Cloud IAM client.
+func (s *ClusterScope) IAMService() *iam.Service {
+	return s.GCPServices.IAM
+}
+
+// WorkloadIdentityPoolSpec returns google iam target-tcp-proxy spec.
+func (s *ClusterScope) WorkloadIdentityPoolSpec() *iam.WorkloadIdentityPool {
+	if s.GCPCluster.Spec.WorkloadIdentityFederation == nil ||
+		!ptr.Deref(s.GCPCluster.Spec.WorkloadIdentityFederation.Enabled, false) {
+		return nil
+	}
+
+	return &iam.WorkloadIdentityPool{
+		Name:        infrav1.ClusterTagKey(s.Name()),
+		DisplayName: infrav1.ClusterTagKey(s.Name()),
+		Description: "Workload Identity Pool for GCP Cluster API Provider",
+		Mode:        "FEDERATION_ONLY",
+	}
+}
+
+// WorkloadIdentityProviderSpec returns google iam target-tcp-proxy spec.
+func (s *ClusterScope) WorkloadIdentityProviderSpec() *iam.WorkloadIdentityPoolProvider {
+	if s.GCPCluster.Spec.WorkloadIdentityFederation == nil ||
+		!ptr.Deref(s.GCPCluster.Spec.WorkloadIdentityFederation.Enabled, false) {
+		return nil
+	}
+
+	providerName := s.Name()
+
+	return &iam.WorkloadIdentityPoolProvider{
+		Name:        providerName,
+		DisplayName: infrav1.ClusterTagKey(s.Name()),
+		Description: "Workload Identity Provider for GCP Cluster API Provider",
+		Disabled:    false,
+		AttributeMapping: map[string]string{
+			"google.subject": "assertion.sub",
+		},
+		Oidc: &iam.Oidc{
+			IssuerUri: s.IssuerUri(),
+			AllowedAudiences: []string{
+				"sts.googleapis.com",
+				fmt.Sprintf("//iam.googleapis.com/%s/providers/%s", s.WorkloadIdentityPoolSpec().Name, providerName),
+			},
+		},
+	}
+}
+
+func (s *ClusterScope) IssuerUri() string {
+	return fmt.Sprintf("https://storage.googleapis.com/%s/%s", s.GCPCluster.Spec.Bucket.Name, s.Name())
 }
