@@ -27,6 +27,7 @@ import (
 	"k8s.io/utils/ptr"
 	infrav1 "sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud"
+	"sigs.k8s.io/cluster-api-provider-gcp/feature"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,6 +58,15 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 		}
 
 		params.GCPServices.Compute = computeSvc
+	}
+
+	if feature.Gates.Enabled(feature.WorkloadIDFederation) && params.GCPServices.Compute == nil {
+		storageSvc, err := newStorageService(ctx, params.GCPCluster.Spec.CredentialsRef, params.Client, params.GCPCluster.Spec.ServiceEndpoints)
+		if err != nil {
+			return nil, errors.Errorf("failed to create gcp compute client: %v", err)
+		}
+
+		params.GCPServices.Storage = storageSvc
 	}
 
 	helper, err := patch.NewHelper(params.GCPCluster, params.Client)
