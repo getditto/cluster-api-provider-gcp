@@ -25,7 +25,11 @@ import (
 
 // Delete implements cloud.Reconciler.
 func (s *Service) Delete(ctx context.Context) error {
-	panic("unimplemented")
+	if !feature.Gates.Enabled(feature.WorkloadIDFederation) {
+		return nil
+	}
+
+	return nil
 }
 
 // Reconcile implements cloud.Reconciler.

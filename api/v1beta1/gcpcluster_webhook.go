@@ -22,6 +22,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/cluster-api-provider-gcp/feature"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -54,8 +55,20 @@ func (c *GCPCluster) Default() {
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (c *GCPCluster) ValidateCreate() (admission.Warnings, error) {
 	clusterlog.Info("validate create", "name", c.Name)
+	var allErrs field.ErrorList
 
-	return nil, nil
+	if c.Spec.GCSBucket != nil && !feature.Gates.Enabled(feature.WorkloadIDFederation) {
+		allErrs = append(allErrs,
+			field.Invalid(field.NewPath("spec", "GCSBucket"),
+				c.Spec.GCSBucket, "cannot set GCSBucket when WorkloadIDFederation is disabled"),
+		)
+	}
+
+	if len(allErrs) == 0 {
+		return nil, nil
+	}
+
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind("GCPCluster").GroupKind(), c.Name, allErrs)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
