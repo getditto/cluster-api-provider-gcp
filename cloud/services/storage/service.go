@@ -18,13 +18,17 @@ limitations under the License.
 package storage
 
 import (
+	"log"
+
 	"google.golang.org/api/storage/v1"
+	"sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud"
 )
 
 // Scope is an interfaces that hold used methods.
 type Scope interface {
 	cloud.Cluster
+	Bucket() *v1beta1.Bucket
 	StorageService() *storage.Service
 }
 
@@ -38,6 +42,10 @@ var _ cloud.Reconciler = &Service{}
 
 // New returns Service from given scope.
 func New(scope Scope) *Service {
+	if scope.StorageService() == nil {
+		log.Fatalln("StorageService is nil")
+	}
+
 	return &Service{
 		scope:   scope,
 		buckets: NewBucketsService(scope),

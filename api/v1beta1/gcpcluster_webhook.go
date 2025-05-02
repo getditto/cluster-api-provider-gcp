@@ -57,10 +57,10 @@ func (c *GCPCluster) ValidateCreate() (admission.Warnings, error) {
 	clusterlog.Info("validate create", "name", c.Name)
 	var allErrs field.ErrorList
 
-	if c.Spec.GCSBucket != nil && !feature.Gates.Enabled(feature.WorkloadIDFederation) {
+	if c.Spec.Bucket != nil && !feature.Gates.Enabled(feature.WorkloadIDFederation) {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "GCSBucket"),
-				c.Spec.GCSBucket, "cannot set GCSBucket when WorkloadIDFederation is disabled"),
+			field.Invalid(field.NewPath("spec", "Bucket"),
+				c.Spec.Bucket, "cannot set Bucket when WorkloadIDFederation is disabled"),
 		)
 	}
 

@@ -26,6 +26,7 @@ import (
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/storage/v1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
 	infrav1 "sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud"
 	"sigs.k8s.io/cluster-api-provider-gcp/feature"
@@ -61,7 +62,7 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 		params.GCPServices.Compute = computeSvc
 	}
 
-	if feature.Gates.Enabled(feature.WorkloadIDFederation) && params.GCPServices.Compute == nil {
+	if feature.Gates.Enabled(feature.WorkloadIDFederation) && params.GCPServices.Storage == nil {
 		storageSvc, err := newStorageService(ctx, params.GCPCluster.Spec.CredentialsRef, params.Client, params.GCPCluster.Spec.ServiceEndpoints)
 		if err != nil {
 			return nil, errors.Errorf("failed to create gcp compute client: %v", err)
@@ -95,6 +96,11 @@ type ClusterScope struct {
 }
 
 // ANCHOR: ClusterGetter
+
+// Bucket returns the Bucket of the cluster.
+func (s *ClusterScope) Bucket() *v1beta1.Bucket {
+	return s.GCPCluster.Spec.Bucket
+}
 
 // Cloud returns initialized cloud.
 func (s *ClusterScope) Cloud() cloud.Cloud {

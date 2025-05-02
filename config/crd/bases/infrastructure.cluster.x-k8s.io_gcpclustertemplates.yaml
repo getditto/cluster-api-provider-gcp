@@ -81,6 +81,22 @@ spec:
                           AdditionalLabels is an optional set of tags to add to GCP resources managed by the GCP provider, in addition to the
                           ones added by default.
                         type: object
+                      bucket:
+                        description: |-
+                          Bucket contains options to configure a supporting GCS bucket for this
+                          cluster - Used for publishing Service Account signing JWKS documents to enable
+                          Workload Identity Federation (requires WorkloadIDFederation feature flag to be enabled).
+                        properties:
+                          name:
+                            description: Name is the name of the GCS bucket to be
+                              created.
+                            maxLength: 63
+                            minLength: 3
+                            pattern: ^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$
+                            type: string
+                        required:
+                        - name
+                        type: object
                       controlPlaneEndpoint:
                         description: ControlPlaneEndpoint represents the endpoint
                           used to communicate with the control plane.
@@ -123,22 +139,6 @@ spec:
                         items:
                           type: string
                         type: array
-                      gcsBucket:
-                        description: |-
-                          GCSBucket contains options to configure a supporting GCS bucket for this
-                          cluster - Used for publishing Service Account signing JWKS documents to enable
-                          Workload Identity Federation (requires WorkloadIDFederation feature flag to be enabled).
-                        properties:
-                          name:
-                            description: Name is the name of the GCS bucket to be
-                              created.
-                            maxLength: 63
-                            minLength: 3
-                            pattern: ^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$
-                            type: string
-                        required:
-                        - name
-                        type: object
                       loadBalancer:
                         description: LoadBalancer contains configuration for one or
                           more LoadBalancers.

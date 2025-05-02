@@ -20,7 +20,10 @@ package storage
 import (
 	"context"
 
+	"github.com/GoogleCloudPlatform/k8s-cloud-provider/pkg/cloud/meta"
+	"google.golang.org/api/storage/v1"
 	"sigs.k8s.io/cluster-api-provider-gcp/feature"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // Delete implements cloud.Reconciler.
@@ -34,9 +37,17 @@ func (s *Service) Delete(ctx context.Context) error {
 
 // Reconcile implements cloud.Reconciler.
 func (s *Service) Reconcile(ctx context.Context) error {
+	log := log.FromContext(ctx)
 	if !feature.Gates.Enabled(feature.WorkloadIDFederation) {
+		log.V(4).Info("WorkloadIDFederation feature gate is disabled, skipping reconcile")
 		return nil
 	}
+	log.V(2).Info("Reconciling storage")
+
+	// reconcile Bucket
+	s.buckets.Insert(ctx, &meta.Key{Name: s.scope.Name()}, &storage.Bucket{
+		Name: s.scope.Name(),
+	})
 
 	return nil
 }

@@ -17,11 +17,12 @@ limitations under the License.
 package v1beta1
 
 import (
+	"reflect"
+	"testing"
+
 	"k8s.io/component-base/featuregate"
 	utilfeature "k8s.io/component-base/featuregate/testing"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"testing"
 
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/cluster-api-provider-gcp/feature"
@@ -114,17 +115,17 @@ func TestGCPCluster_ValidateCreate(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name: "GCSBucket set when WorkloadIDFederation is disabled",
+			name: "Bucket set when WorkloadIDFederation is disabled",
 			newCluster: &GCPCluster{
 				Spec: GCPClusterSpec{
-					GCSBucket: &GCSBucket{Name: "my-bucket"},
+					Bucket: &Bucket{Name: "my-bucket"},
 				},
 			},
 			want:    nil,
 			wantErr: true,
 		},
 		{
-			name: "GCSBucket nil",
+			name: "Bucket nil",
 			newCluster: &GCPCluster{
 				Spec: GCPClusterSpec{
 					Network: NetworkSpec{
@@ -136,10 +137,10 @@ func TestGCPCluster_ValidateCreate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "GCSBucket set and WorkloadIDFederation enabled",
+			name: "Bucket set and WorkloadIDFederation enabled",
 			newCluster: &GCPCluster{
 				Spec: GCPClusterSpec{
-					GCSBucket: &GCSBucket{Name: "my-bucket"},
+					Bucket: &Bucket{Name: "my-bucket"},
 				},
 			},
 			enabledFeatures: []featuregate.Feature{
