@@ -36,7 +36,7 @@ type Scope interface {
 type Service struct {
 	scope   Scope
 	Buckets bucketsInterface
-	Objects objectsInterface
+	Objects ObjectsInterface
 }
 
 var _ cloud.Reconciler = &Service{}
@@ -50,6 +50,6 @@ func New(scope Scope) *Service {
 	return &Service{
 		scope:   scope,
 		Buckets: NewBucketsService(scope),
-		Objects: NewObjectsService(scope),
+		Objects: NewObjectsService(scope.StorageService()),
 	}
 }

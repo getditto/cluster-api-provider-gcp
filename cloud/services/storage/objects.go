@@ -7,21 +7,19 @@ import (
 	"google.golang.org/api/storage/v1"
 )
 
-type objectsInterface interface {
+type ObjectsInterface interface {
 	Get(ctx context.Context, bucket, key string) (*storage.Object, error)
 	Insert(ctx context.Context, bucket, key string, obj *storage.Object, buf io.Reader) error
 	Delete(ctx context.Context, bucket, key string) error
 }
 
 type Objects struct {
-	scope Scope
-	svc   *storage.ObjectsService
+	svc *storage.ObjectsService
 }
 
-func NewObjectsService(scope Scope) *Objects { // Get the storage service client
+func NewObjectsService(storageSvc *storage.Service) *Objects { // Get the storage service client
 	return &Objects{
-		scope: scope,
-		svc:   storage.NewObjectsService(scope.StorageService()),
+		svc: storage.NewObjectsService(storageSvc),
 	}
 }
 
@@ -46,4 +44,4 @@ func (b *Objects) Delete(ctx context.Context, bucket, key string) error {
 	return b.svc.Delete(bucket, key).Context(ctx).Do()
 }
 
-var _ objectsInterface = &Objects{}
+var _ ObjectsInterface = &Objects{}

@@ -431,3 +431,8 @@ func (s *ClusterScope) Close() error {
 func (s *ClusterScope) StorageService() *storage.Service {
 	return s.GCPServices.Storage
 }
+
+// ManagementClient returns the Kubernetes Client for the management cluster.
+func (s *ClusterScope) ManagementClient() client.Client {
+	return s.client
+}
