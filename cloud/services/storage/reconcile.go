@@ -28,8 +28,15 @@ import (
 
 // Delete implements cloud.Reconciler.
 func (s *Service) Delete(ctx context.Context) error {
+	log := log.FromContext(ctx)
 	if !feature.Gates.Enabled(feature.WorkloadIDFederation) {
+		log.V(4).Info("WorkloadIDFederation feature gate is disabled, skipping reconcile")
 		return nil
+	}
+	log.V(2).Info("Deleting cloud storage")
+	// Delete Bucket
+	if err := s.buckets.Delete(ctx, &meta.Key{Name: s.scope.Name()}); err != nil {
+		log.Error(err, "Failed to delete cloud storage bucket")
 	}
 
 	return nil
@@ -42,7 +49,7 @@ func (s *Service) Reconcile(ctx context.Context) error {
 		log.V(4).Info("WorkloadIDFederation feature gate is disabled, skipping reconcile")
 		return nil
 	}
-	log.V(2).Info("Reconciling storage")
+	log.V(2).Info("Reconciling cloud storage")
 
 	// reconcile Bucket
 	s.buckets.Insert(ctx, &meta.Key{Name: s.scope.Name()}, &storage.Bucket{
