@@ -20,15 +20,14 @@ package storage
 import (
 	"context"
 
-	k8scloud "github.com/GoogleCloudPlatform/k8s-cloud-provider/pkg/cloud"
 	"github.com/GoogleCloudPlatform/k8s-cloud-provider/pkg/cloud/meta"
 	"google.golang.org/api/storage/v1"
 )
 
 type bucketsInterface interface {
-	Get(ctx context.Context, key *meta.Key, options ...k8scloud.Option) (*storage.Bucket, error)
-	Insert(ctx context.Context, key *meta.Key, obj *storage.Bucket, options ...k8scloud.Option) error
-	Delete(ctx context.Context, key *meta.Key, options ...k8scloud.Option) error
+	Get(ctx context.Context, key *meta.Key) (*storage.Bucket, error)
+	Insert(ctx context.Context, key *meta.Key, obj *storage.Bucket) error
+	Delete(ctx context.Context, key *meta.Key) error
 }
 
 type Buckets struct {
@@ -44,20 +43,20 @@ func NewBucketsService(scope Scope) *Buckets { // Get the storage service client
 }
 
 // Get implements bucketsInterface.
-func (b *Buckets) Get(ctx context.Context, key *meta.Key, _ ...k8scloud.Option) (*storage.Bucket, error) {
+func (b *Buckets) Get(ctx context.Context, key *meta.Key) (*storage.Bucket, error) {
 	// Use the client to get the bucket
 	return b.svc.Get(key.Name).Context(ctx).Do()
 }
 
 // Insert implements bucketsInterface.
-func (b *Buckets) Insert(ctx context.Context, key *meta.Key, obj *storage.Bucket, _ ...k8scloud.Option) error {
+func (b *Buckets) Insert(ctx context.Context, key *meta.Key, obj *storage.Bucket) error {
 	// Use the client to insert the bucket
 	_, err := b.svc.Insert(b.scope.Project(), obj).Context(ctx).Do()
 	return err
 }
 
 // Delete implements bucketsInterface.
-func (b *Buckets) Delete(ctx context.Context, key *meta.Key, _ ...k8scloud.Option) error {
+func (b *Buckets) Delete(ctx context.Context, key *meta.Key) error {
 	return b.svc.Delete(key.Name).Context(ctx).Do()
 }
 

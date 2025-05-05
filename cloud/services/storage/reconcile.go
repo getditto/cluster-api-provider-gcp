@@ -19,9 +19,12 @@ package storage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/GoogleCloudPlatform/k8s-cloud-provider/pkg/cloud/meta"
 	"google.golang.org/api/storage/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"sigs.k8s.io/cluster-api-provider-gcp/feature"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -33,9 +36,10 @@ func (s *Service) Delete(ctx context.Context) error {
 		log.V(4).Info("WorkloadIDFederation feature gate is disabled, skipping reconcile")
 		return nil
 	}
+
 	log.V(2).Info("Deleting cloud storage")
 	// Delete Bucket
-	if err := s.buckets.Delete(ctx, &meta.Key{Name: s.scope.Name()}); err != nil {
+	if err := s.Buckets.Delete(ctx, &meta.Key{Name: s.scope.Bucket().Name}); err != nil {
 		log.Error(err, "Failed to delete cloud storage bucket")
 	}
 
@@ -49,12 +53,37 @@ func (s *Service) Reconcile(ctx context.Context) error {
 		log.V(4).Info("WorkloadIDFederation feature gate is disabled, skipping reconcile")
 		return nil
 	}
-	log.V(2).Info("Reconciling cloud storage")
+	log.Info("Reconciling cloud storage resources")
 
-	// reconcile Bucket
-	s.buckets.Insert(ctx, &meta.Key{Name: s.scope.Name()}, &storage.Bucket{
-		Name: s.scope.Name(),
-	})
+	if s.scope.Bucket() == nil || s.scope.Bucket().Name == "" {
+		log.V(4).Info("bucket not configured, skipping reconcile")
+		return nil
+	}
+
+	// Reconcile Bucket
+	// check if bucket exists
+	bucket, err := s.Buckets.Get(ctx, &meta.Key{Name: s.scope.Bucket().Name})
+	if err != nil {
+		// Check if the error is a "not found" error
+		statusErr, ok := status.FromError(err)
+
+		if ok && statusErr.Code() == codes.NotFound {
+			log.V(2).Info("Bucket not found, creating bucket")
+
+			err := s.Buckets.Insert(ctx, &meta.Key{Name: s.scope.Bucket().Name}, &storage.Bucket{
+				Name:     s.scope.Bucket().Name,
+				Location: s.scope.Region(),
+			})
+			if err != nil {
+				return fmt.Errorf("failed to create bucket: %w", err)
+			}
+
+		} else {
+			log.Error(err, "Failed to get cloud storage bucket")
+			return fmt.Errorf("failed to get cloud storage bucket: %w", err)
+		}
+	}
+	log.V(2).Info("Bucket found, skipping create: ", bucket.Name)
 
 	return nil
 }
