@@ -97,7 +97,7 @@ func (s *Service) Reconcile(ctx context.Context) error {
 		if gcperrors.IsNotFound(err) {
 			log.V(2).Info("Bucket not found, creating bucket")
 
-			err := s.Buckets.Insert(ctx, &meta.Key{Name: s.scope.Bucket().Name}, &storage.Bucket{
+			err := s.Buckets.Insert(ctx, &storage.Bucket{
 				Name:     s.scope.Bucket().Name,
 				Location: s.scope.Region(),
 				Labels: map[string]string{
@@ -107,11 +107,9 @@ func (s *Service) Reconcile(ctx context.Context) error {
 			if err != nil {
 				return fmt.Errorf("failed to create bucket: %w", err)
 			}
-
 		} else {
 			return fmt.Errorf("failed to get cloud storage bucket: %w", err)
 		}
-
 	} else {
 		log.V(2).Info("Bucket found, skipping create")
 	}

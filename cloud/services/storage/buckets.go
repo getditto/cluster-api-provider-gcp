@@ -26,15 +26,17 @@ import (
 
 type bucketsInterface interface {
 	Get(ctx context.Context, key *meta.Key) (*storage.Bucket, error)
-	Insert(ctx context.Context, key *meta.Key, obj *storage.Bucket) error
+	Insert(ctx context.Context, obj *storage.Bucket) error
 	Delete(ctx context.Context, key *meta.Key) error
 }
 
+// Buckets implements bucketsInterface.
 type Buckets struct {
 	scope Scope
 	svc   *storage.BucketsService
 }
 
+// NewBucketsService returns a new Buckets service client.
 func NewBucketsService(scope Scope) *Buckets { // Get the storage service client
 	return &Buckets{
 		scope: scope,
@@ -49,7 +51,7 @@ func (b *Buckets) Get(ctx context.Context, key *meta.Key) (*storage.Bucket, erro
 }
 
 // Insert implements bucketsInterface.
-func (b *Buckets) Insert(ctx context.Context, key *meta.Key, obj *storage.Bucket) error {
+func (b *Buckets) Insert(ctx context.Context, obj *storage.Bucket) error {
 	// Use the client to insert the bucket
 	_, err := b.svc.Insert(b.scope.Project(), obj).Context(ctx).Do()
 	return err

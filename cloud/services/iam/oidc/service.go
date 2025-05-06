@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Scope is an interfaces that hold used methods.
 type Scope interface {
 	cloud.Cluster
 	Bucket() *v1beta1.Bucket

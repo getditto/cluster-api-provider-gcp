@@ -26,7 +26,6 @@ import (
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/storage/v1"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
 	infrav1 "sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud"
 	"sigs.k8s.io/cluster-api-provider-gcp/feature"
@@ -98,7 +97,7 @@ type ClusterScope struct {
 // ANCHOR: ClusterGetter
 
 // Bucket returns the Bucket of the cluster.
-func (s *ClusterScope) Bucket() *v1beta1.Bucket {
+func (s *ClusterScope) Bucket() *infrav1.Bucket {
 	return s.GCPCluster.Spec.Bucket
 }
 

@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 
 	"github.com/go-jose/go-jose/v3"
@@ -55,7 +56,7 @@ func (s *Service) buildIssuerURL() string {
 func createJwksKey(privKeyBytes []byte) (*jose.JSONWebKey, error) {
 	keyBlock, _ := pem.Decode(privKeyBytes)
 	if keyBlock == nil {
-		return nil, fmt.Errorf("failed to decode PEM block for private key")
+		return nil, errors.New("failed to decode PEM block for private key")
 	}
 
 	cert, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)

@@ -74,7 +74,6 @@ func (s *Service) reconcileBucketContents(ctx context.Context) error {
 	if err := storageSvc.Objects.Insert(
 		ctx,
 		s.scope.Bucket().Name,
-		s.buildOidcDocObjectKey(),
 		&gcstorage.Object{
 			Name:        s.buildOidcDocObjectKey(),
 			ContentType: "application/json",
@@ -112,7 +111,6 @@ func (s *Service) reconcileBucketContents(ctx context.Context) error {
 	if err := storageSvc.Objects.Insert(
 		ctx,
 		s.scope.Bucket().Name,
-		s.buildJwksObjectKey(),
 		&gcstorage.Object{
 			Name:        s.buildJwksObjectKey(),
 			ContentType: "application/json",
