@@ -19,12 +19,12 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/k8s-cloud-provider/pkg/cloud/meta"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/storage/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"sigs.k8s.io/cluster-api-provider-gcp/feature"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -64,10 +64,7 @@ func (s *Service) Reconcile(ctx context.Context) error {
 	// check if bucket exists
 	bucket, err := s.Buckets.Get(ctx, &meta.Key{Name: s.scope.Bucket().Name})
 	if err != nil {
-		// Check if the error is a "not found" error
-		statusErr, ok := status.FromError(err)
-
-		if ok && statusErr.Code() == codes.NotFound {
+		if isNotFoundError(err) {
 			log.V(2).Info("Bucket not found, creating bucket")
 
 			err := s.Buckets.Insert(ctx, &meta.Key{Name: s.scope.Bucket().Name}, &storage.Bucket{
@@ -77,13 +74,23 @@ func (s *Service) Reconcile(ctx context.Context) error {
 			if err != nil {
 				return fmt.Errorf("failed to create bucket: %w", err)
 			}
-
 		} else {
-			log.Error(err, "Failed to get cloud storage bucket")
 			return fmt.Errorf("failed to get cloud storage bucket: %w", err)
 		}
+
 	}
 	log.V(2).Info("Bucket found, skipping create: ", bucket.Name)
 
 	return nil
+}
+
+func isNotFoundError(err error) bool {
+	var e *googleapi.Error
+	if ok := errors.As(err, &e); ok {
+		// Check if the error is a "not found" error
+		if e.Code == 404 {
+			return true
+		}
+	}
+	return false
 }

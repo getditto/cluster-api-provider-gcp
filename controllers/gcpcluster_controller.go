@@ -205,8 +205,6 @@ func (r *GCPClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		// Reconcile subnets before loadbalancers since subnet is needed for internal LB
 		subnets.New(clusterScope),
 		loadbalancers.New(clusterScope),
-		storage.New(clusterScope),
-		oidc.New(clusterScope),
 	}
 
 	for _, r := range reconcilers {
@@ -226,6 +224,21 @@ func (r *GCPClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 
 	record.Eventf(clusterScope.GCPCluster, "GCPClusterReconcile", "Got control-plane endpoint - %s", controlPlaneEndpoint.Host)
 	clusterScope.SetReady()
+
+	// Second wave of reconcilers that shouldn't block the clusterScope being marked as ready.
+	reconcilers = []cloud.Reconciler{
+		storage.New(clusterScope),
+		oidc.New(clusterScope),
+	}
+
+	for _, r := range reconcilers {
+		if err := r.Reconcile(ctx); err != nil {
+			log.Error(err, "Reconcile error")
+			record.Warnf(clusterScope.GCPCluster, "GCPClusterReconcile", "Reconcile error - %v", err)
+			return ctrl.Result{}, err
+		}
+	}
+
 	record.Event(clusterScope.GCPCluster, "GCPClusterReconcile", "Reconciled")
 	return ctrl.Result{}, nil
 }

@@ -8,6 +8,7 @@ require (
 	cloud.google.com/go/iam v1.4.0
 	cloud.google.com/go/resourcemanager v1.10.3
 	github.com/GoogleCloudPlatform/k8s-cloud-provider v1.33.0
+	github.com/go-jose/go-jose/v3 v3.0.4
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.7.0
 	github.com/googleapis/gax-go/v2 v2.14.1
@@ -46,7 +47,6 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
