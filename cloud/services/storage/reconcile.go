@@ -19,12 +19,12 @@ package storage
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/k8s-cloud-provider/pkg/cloud/meta"
-	"google.golang.org/api/googleapi"
 	"google.golang.org/api/storage/v1"
+	infrav1 "sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
+	"sigs.k8s.io/cluster-api-provider-gcp/cloud/gcperrors"
 	"sigs.k8s.io/cluster-api-provider-gcp/feature"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -38,6 +38,35 @@ func (s *Service) Delete(ctx context.Context) error {
 	}
 
 	log.V(2).Info("Deleting cloud storage")
+
+	if s.scope.Bucket() == nil || s.scope.Bucket().Name == "" {
+		log.V(4).Info("bucket not configured, skipping delete")
+		return nil
+	}
+
+	log = log.WithValues("bucket", s.scope.Bucket().Name)
+
+	// Get bucket and check it is owned by this cluster
+	bucket, err := s.Buckets.Get(ctx, &meta.Key{Name: s.scope.Bucket().Name})
+	if err != nil {
+		if gcperrors.IsNotFound(err) {
+			log.V(2).Info("Bucket not found, skipping delete")
+			return nil
+		}
+		return fmt.Errorf("failed to get cloud storage bucket: %w", err)
+	}
+	if bucket.Labels == nil {
+		log.V(2).Info("Bucket labels not found, skipping delete")
+		return nil
+	}
+	if lbl, ok := bucket.Labels[infrav1.ClusterTagKey(s.scope.Name())]; !ok {
+		log.V(2).Info("Bucket labels not found, skipping delete")
+		return nil
+	} else if lbl != "owned" {
+		log.V(2).Info("Bucket labels not owned by this cluster, skipping delete")
+		return nil
+	}
+
 	// Delete Bucket
 	if err := s.Buckets.Delete(ctx, &meta.Key{Name: s.scope.Bucket().Name}); err != nil {
 		log.Error(err, "Failed to delete cloud storage bucket")
@@ -59,38 +88,33 @@ func (s *Service) Reconcile(ctx context.Context) error {
 		log.V(4).Info("bucket not configured, skipping reconcile")
 		return nil
 	}
+	log = log.WithValues("bucket", s.scope.Bucket().Name)
 
 	// Reconcile Bucket
 	// check if bucket exists
-	bucket, err := s.Buckets.Get(ctx, &meta.Key{Name: s.scope.Bucket().Name})
+	_, err := s.Buckets.Get(ctx, &meta.Key{Name: s.scope.Bucket().Name})
 	if err != nil {
-		if isNotFoundError(err) {
+		if gcperrors.IsNotFound(err) {
 			log.V(2).Info("Bucket not found, creating bucket")
 
 			err := s.Buckets.Insert(ctx, &meta.Key{Name: s.scope.Bucket().Name}, &storage.Bucket{
 				Name:     s.scope.Bucket().Name,
 				Location: s.scope.Region(),
+				Labels: map[string]string{
+					infrav1.ClusterTagKey(s.scope.Name()): "owned",
+				},
 			})
 			if err != nil {
 				return fmt.Errorf("failed to create bucket: %w", err)
 			}
+
 		} else {
 			return fmt.Errorf("failed to get cloud storage bucket: %w", err)
 		}
 
+	} else {
+		log.V(2).Info("Bucket found, skipping create")
 	}
-	log.V(2).Info("Bucket found, skipping create: ", bucket.Name)
 
 	return nil
-}
-
-func isNotFoundError(err error) bool {
-	var e *googleapi.Error
-	if ok := errors.As(err, &e); ok {
-		// Check if the error is a "not found" error
-		if e.Code == 404 {
-			return true
-		}
-	}
-	return false
 }
