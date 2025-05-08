@@ -375,6 +375,16 @@ spec:
                     pattern: ^https://
                     type: string
                 type: object
+              workloadIdentityFederation:
+                description: |-
+                  WorkloadIdentityFederation contains options to configure Workload Identity Federation
+                  for this cluster.
+                properties:
+                  enabled:
+                    description: Enabled indicates whether Workload Identity Federation
+                      is enabled for this cluster.
+                    type: boolean
+                type: object
             required:
             - project
             - region

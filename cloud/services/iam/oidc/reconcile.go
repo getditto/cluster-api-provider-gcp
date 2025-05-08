@@ -64,7 +64,7 @@ func (s *Service) Delete(ctx context.Context) error {
 
 func (s *Service) reconcileBucketContents(ctx context.Context) error {
 	// create the OpenID Connect discovery document
-	openIDConfig, err := buildDiscoveryJSON(s.buildIssuerURL())
+	openIDConfig, err := buildDiscoveryJSON(s.scope.IssuerUri())
 	if err != nil {
 		return err
 	}

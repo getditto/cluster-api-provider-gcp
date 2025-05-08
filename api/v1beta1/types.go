@@ -381,3 +381,20 @@ type Bucket struct {
 	// +kubebuilder:validation:Pattern=`^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$`
 	Name string `json:"name"`
 }
+
+type WorkloadIdentityFederation struct {
+	// Enabled indicates whether Workload Identity Federation is enabled for this cluster.
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// PoolName is the name of the Workload Identity Pool to be created.
+	// +kubebuilder:validation:MinLength:=5
+	// +kubebuilder:validation:MaxLength:=32
+	// +kubebuilder:validation:Pattern=`^(?!gcp-)[a-z0-9][a-z0-9-]{4,28}[a-z0-9]$`
+	// PoolName string `json:"poolName,omitempty"`
+
+	// // ProviderName is the name of the Workload Identity Provider to be created.
+	// // +kubebuilder:validation:MinLength:=5
+	// // +kubebuilder:validation:MaxLength:=32
+	// ProviderName string `json:"providerName,omitempty"`
+}

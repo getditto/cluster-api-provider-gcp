@@ -46,11 +46,6 @@ func buildDiscoveryJSON(issuerURL string) ([]byte, error) {
 	return json.MarshalIndent(d, "", "")
 }
 
-func (s *Service) buildIssuerURL() string {
-	// e.g. storage.googleapis.com/<bucketname>/<clustername>-sa
-	return fmt.Sprintf("https://storage.googleapis.com/%s/%s", s.scope.Bucket().Name, s.scope.Name())
-}
-
 // createJwksKey generates a JSON Web Key (JWK) from the given private key bytes (in PEM format).
 // It returns a pointer to the JSONWebKey or an error if the operation fails.
 func createJwksKey(privKeyBytes []byte) (*jose.JSONWebKey, error) {
