@@ -28,6 +28,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cloud-provider/pkg/cloud"
 	"github.com/pkg/errors"
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/iam/v1"
 	"google.golang.org/api/option"
 	"google.golang.org/api/storage/v1"
 	"k8s.io/client-go/pkg/version"
@@ -39,6 +40,7 @@ import (
 // GCPServices contains all the gcp services used by the scopes.
 type GCPServices struct {
 	Compute *compute.Service
+	IAM     *iam.Service
 	Storage *storage.Service
 }
 
@@ -109,6 +111,24 @@ func newComputeService(ctx context.Context, credentialsRef *infrav1.ObjectRefere
 	return computeSvc, nil
 }
 
+func newIAMService(ctx context.Context, credentialsRef *infrav1.ObjectReference, crClient client.Client, endpoints *infrav1.ServiceEndpoints) (*iam.Service, error) {
+	opts, err := defaultClientOptions(ctx, credentialsRef, crClient)
+	if err != nil {
+		return nil, fmt.Errorf("getting default gcp client options: %w", err)
+	}
+
+	if endpoints != nil && endpoints.IAMServiceEndpoint != "" {
+		opts = append(opts, option.WithEndpoint(endpoints.IAMServiceEndpoint))
+	}
+
+	iamSvc, err := iam.NewService(ctx, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("creating new iam service instance: %w", err)
+	}
+
+	return iamSvc, nil
+}
+
 func newStorageService(ctx context.Context, credentialsRef *infrav1.ObjectReference, crClient client.Client, endpoints *infrav1.ServiceEndpoints) (*storage.Service, error) {
 	opts, err := defaultClientOptions(ctx, credentialsRef, crClient)
 	if err != nil {
@@ -121,7 +141,7 @@ func newStorageService(ctx context.Context, credentialsRef *infrav1.ObjectRefere
 
 	storageSvc, err := storage.NewService(ctx, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("creating new compute service instance: %w", err)
+		return nil, fmt.Errorf("creating new storage service instance: %w", err)
 	}
 
 	return storageSvc, nil

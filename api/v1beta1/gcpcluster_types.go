@@ -79,6 +79,11 @@ type GCPClusterSpec struct {
 	// Workload Identity Federation (requires WorkloadIDFederation feature flag to be enabled).
 	// +optional
 	Bucket *Bucket `json:"bucket,omitempty"`
+
+	// WorkloadIdentityFederation contains options to configure Workload Identity Federation
+	// for this cluster.
+	// +optional
+	WorkloadIdentityFederation *WorkloadIdentityFederation `json:"workloadIdentityFederation,omitempty"`
 }
 
 // GCPClusterStatus defines the observed state of GCPCluster.

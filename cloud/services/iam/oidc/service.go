@@ -14,6 +14,7 @@ import (
 type Scope interface {
 	cloud.Cluster
 	Bucket() *v1beta1.Bucket
+	IssuerUri() string
 	ManagementClient() client.Client
 	StorageService() *gcstorage.Service
 }
