@@ -73,15 +73,11 @@ func (s *Service) reconcileProvider(ctx context.Context) error {
 		return nil
 	}
 
-	_, err := s.widpp.Get(fmt.Sprintf("%s/workloadIdentityPools/%s/providers/%s", s.parent(), s.scope.WorkloadIdentityPoolSpec().Name, provider.Name)).Do()
+	_, err := s.GetProvider(ctx, provider.Name)
 	if err != nil {
 		if gcperrors.IsNotFound(err) {
-			log.V(2).Info("Provider not found, creating...", "providerName", provider.Name)
-
-			_, err := s.widpp.Create(
-				fmt.Sprintf("%s/workloadIdentityPools/%s", s.parent(), s.scope.WorkloadIdentityPoolSpec().Name),
-				provider,
-			).WorkloadIdentityPoolProviderId(provider.Name).Do()
+			log.V(2).Info("Provider not found, creating...")
+			err := s.InsertProvider(ctx, provider)
 			if err != nil {
 				return fmt.Errorf("failed to create WI provider: %w", err)
 			}
