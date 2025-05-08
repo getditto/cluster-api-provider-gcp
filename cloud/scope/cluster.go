@@ -315,6 +315,28 @@ func (s *ClusterScope) FirewallRulesSpec() []*compute.Firewall {
 		},
 	}
 
+	for i, subnet := range s.GCPCluster.Spec.Network.Subnets {
+		for k, cidr := range subnet.SecondaryCidrBlocks {
+			firewallRules = append(firewallRules, &compute.Firewall{
+				Name:    fmt.Sprintf("allow-%s-%d-%s", s.Name(), i, k),
+				Network: s.NetworkLink(),
+				Allowed: []*compute.FirewallAllowed{
+					{
+						IPProtocol: "all",
+					},
+				},
+				Direction: "INGRESS",
+				SourceRanges: []string{
+					cidr,
+				},
+				TargetTags: []string{
+					s.Name() + "-control-plane",
+					s.Name() + "-node",
+				},
+			})
+		}
+	}
+
 	return firewallRules
 }
 
