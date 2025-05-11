@@ -29,7 +29,6 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
-	"google.golang.org/api/storage/v1"
 	"k8s.io/client-go/pkg/version"
 	"k8s.io/client-go/util/flowcontrol"
 	infrav1 "sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
@@ -39,7 +38,6 @@ import (
 // GCPServices contains all the gcp services used by the scopes.
 type GCPServices struct {
 	Compute *compute.Service
-	Storage *storage.Service
 }
 
 // GCPRateLimiter implements cloud.RateLimiter.
@@ -107,24 +105,6 @@ func newComputeService(ctx context.Context, credentialsRef *infrav1.ObjectRefere
 	}
 
 	return computeSvc, nil
-}
-
-func newStorageService(ctx context.Context, credentialsRef *infrav1.ObjectReference, crClient client.Client, endpoints *infrav1.ServiceEndpoints) (*storage.Service, error) {
-	opts, err := defaultClientOptions(ctx, credentialsRef, crClient)
-	if err != nil {
-		return nil, fmt.Errorf("getting default gcp client options: %w", err)
-	}
-
-	if endpoints != nil && endpoints.StorageServiceEndpoint != "" {
-		opts = append(opts, option.WithEndpoint(endpoints.StorageServiceEndpoint))
-	}
-
-	storageSvc, err := storage.NewService(ctx, opts...)
-	if err != nil {
-		return nil, fmt.Errorf("creating new compute service instance: %w", err)
-	}
-
-	return storageSvc, nil
 }
 
 func newClusterManagerClient(ctx context.Context, credentialsRef *infrav1.ObjectReference, crClient client.Client, endpoints *infrav1.ServiceEndpoints) (*container.ClusterManagerClient, error) {

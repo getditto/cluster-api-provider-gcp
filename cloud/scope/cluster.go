@@ -24,11 +24,9 @@ import (
 
 	"github.com/pkg/errors"
 	"google.golang.org/api/compute/v1"
-	"google.golang.org/api/storage/v1"
 	"k8s.io/utils/ptr"
 	infrav1 "sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud"
-	"sigs.k8s.io/cluster-api-provider-gcp/feature"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -61,15 +59,6 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 		params.GCPServices.Compute = computeSvc
 	}
 
-	if feature.Gates.Enabled(feature.WorkloadIDFederation) && params.GCPServices.Storage == nil {
-		storageSvc, err := newStorageService(ctx, params.GCPCluster.Spec.CredentialsRef, params.Client, params.GCPCluster.Spec.ServiceEndpoints)
-		if err != nil {
-			return nil, errors.Errorf("failed to create gcp compute client: %v", err)
-		}
-
-		params.GCPServices.Storage = storageSvc
-	}
-
 	helper, err := patch.NewHelper(params.GCPCluster, params.Client)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init patch helper")
@@ -95,11 +84,6 @@ type ClusterScope struct {
 }
 
 // ANCHOR: ClusterGetter
-
-// Bucket returns the Bucket of the cluster.
-func (s *ClusterScope) Bucket() *infrav1.Bucket {
-	return s.GCPCluster.Spec.Bucket
-}
 
 // Cloud returns initialized cloud.
 func (s *ClusterScope) Cloud() cloud.Cloud {
@@ -446,14 +430,4 @@ func (s *ClusterScope) PatchObject() error {
 // Close closes the current scope persisting the cluster configuration and status.
 func (s *ClusterScope) Close() error {
 	return s.PatchObject()
-}
-
-// StorageService returns the Google Cloud Storage client.
-func (s *ClusterScope) StorageService() *storage.Service {
-	return s.GCPServices.Storage
-}
-
-// ManagementClient returns the Kubernetes Client for the management cluster.
-func (s *ClusterScope) ManagementClient() client.Client {
-	return s.client
 }

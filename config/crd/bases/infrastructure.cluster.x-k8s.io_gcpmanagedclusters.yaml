@@ -349,12 +349,6 @@ spec:
                     format: uri
                     pattern: ^https://
                     type: string
-                  storage:
-                    description: StorageServiceEndpoint is the custom endpoint url
-                      for the Resource Manager Service
-                    format: uri
-                    pattern: ^https://
-                    type: string
                 type: object
             required:
             - project

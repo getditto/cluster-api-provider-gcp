@@ -31,8 +31,6 @@ import (
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud/services/compute/loadbalancers"
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud/services/compute/networks"
 	"sigs.k8s.io/cluster-api-provider-gcp/cloud/services/compute/subnets"
-	"sigs.k8s.io/cluster-api-provider-gcp/cloud/services/iam/oidc"
-	"sigs.k8s.io/cluster-api-provider-gcp/cloud/services/storage"
 	"sigs.k8s.io/cluster-api-provider-gcp/util/reconciler"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
@@ -224,21 +222,6 @@ func (r *GCPClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 
 	record.Eventf(clusterScope.GCPCluster, "GCPClusterReconcile", "Got control-plane endpoint - %s", controlPlaneEndpoint.Host)
 	clusterScope.SetReady()
-
-	// Second wave of reconcilers that shouldn't block the clusterScope being marked as ready.
-	reconcilers = []cloud.Reconciler{
-		storage.New(clusterScope),
-		oidc.New(clusterScope),
-	}
-
-	for _, r := range reconcilers {
-		if err := r.Reconcile(ctx); err != nil {
-			log.Error(err, "Reconcile error")
-			record.Warnf(clusterScope.GCPCluster, "GCPClusterReconcile", "Reconcile error - %v", err)
-			return ctrl.Result{}, err
-		}
-	}
-
 	record.Event(clusterScope.GCPCluster, "GCPClusterReconcile", "Reconciled")
 	return ctrl.Result{}, nil
 }
@@ -252,8 +235,6 @@ func (r *GCPClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		subnets.New(clusterScope),
 		firewalls.New(clusterScope),
 		networks.New(clusterScope),
-		oidc.New(clusterScope),
-		storage.New(clusterScope),
 	}
 
 	for _, r := range reconcilers {
