@@ -27,6 +27,7 @@ import (
 	resourcemanager "cloud.google.com/go/resourcemanager/apiv3"
 	"github.com/GoogleCloudPlatform/k8s-cloud-provider/pkg/cloud"
 	"github.com/pkg/errors"
+	"google.golang.org/api/cloudresourcemanager/v1"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/iam/v1"
 	"google.golang.org/api/option"
@@ -39,9 +40,10 @@ import (
 
 // GCPServices contains all the gcp services used by the scopes.
 type GCPServices struct {
-	Compute *compute.Service
-	IAM     *iam.Service
-	Storage *storage.Service
+	CloudResourceManager *cloudresourcemanager.Service
+	Compute              *compute.Service
+	IAM                  *iam.Service
+	Storage              *storage.Service
 }
 
 // GCPRateLimiter implements cloud.RateLimiter.
@@ -109,6 +111,24 @@ func newComputeService(ctx context.Context, credentialsRef *infrav1.ObjectRefere
 	}
 
 	return computeSvc, nil
+}
+
+func newCloudResourceManagerService(ctx context.Context, credentialsRef *infrav1.ObjectReference, crClient client.Client, endpoints *infrav1.ServiceEndpoints) (*cloudresourcemanager.Service, error) {
+	opts, err := defaultClientOptions(ctx, credentialsRef, crClient)
+	if err != nil {
+		return nil, fmt.Errorf("getting default gcp client options: %w", err)
+	}
+
+	if endpoints != nil && endpoints.ResourceManagerServiceEndpoint != "" {
+		opts = append(opts, option.WithEndpoint(endpoints.ResourceManagerServiceEndpoint))
+	}
+
+	crmSvc, err := cloudresourcemanager.NewService(ctx, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("creating new compute service instance: %w", err)
+	}
+
+	return crmSvc, nil
 }
 
 func newIAMService(ctx context.Context, credentialsRef *infrav1.ObjectReference, crClient client.Client, endpoints *infrav1.ServiceEndpoints) (*iam.Service, error) {

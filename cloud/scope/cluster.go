@@ -63,6 +63,12 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 	}
 
 	if feature.Gates.Enabled(feature.WorkloadIDFederation) && params.GCPServices.Storage == nil {
+		crmSvc, err := newCloudResourceManagerService(ctx, params.GCPCluster.Spec.CredentialsRef, params.Client, params.GCPCluster.Spec.ServiceEndpoints)
+		if err != nil {
+			return nil, errors.Errorf("failed to create gcp crm client: %v", err)
+		}
+		params.GCPServices.CloudResourceManager = crmSvc
+
 		iamSvc, err := newIAMService(ctx, params.GCPCluster.Spec.CredentialsRef, params.Client, params.GCPCluster.Spec.ServiceEndpoints)
 		if err != nil {
 			return nil, errors.Errorf("failed to create gcp iam client: %v", err)
@@ -492,7 +498,7 @@ func (s *ClusterScope) WorkloadIdentityProviderSpec() *iam.WorkloadIdentityPoolP
 		return nil
 	}
 
-	providerName := s.Name()
+	providerName := fmt.Sprintf("capg-%s", s.Name())
 
 	return &iam.WorkloadIdentityPoolProvider{
 		Name:        providerName,
@@ -514,4 +520,12 @@ func (s *ClusterScope) WorkloadIdentityProviderSpec() *iam.WorkloadIdentityPoolP
 
 func (s *ClusterScope) IssuerUri() string {
 	return fmt.Sprintf("https://storage.googleapis.com/%s/%s", s.GCPCluster.Spec.Bucket.Name, s.Name())
+}
+
+func (s *ClusterScope) ProjectNumber() (int64, error) {
+	project, err := s.GCPServices.CloudResourceManager.Projects.Get(s.Project()).Do()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get project number")
+	}
+	return project.ProjectNumber, nil
 }

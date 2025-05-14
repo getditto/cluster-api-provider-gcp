@@ -17,6 +17,7 @@ limitations under the License.
 package workloadidentity
 
 import (
+	"fmt"
 	"log"
 
 	"google.golang.org/api/iam/v1"
@@ -32,17 +33,17 @@ type Scope interface {
 	cloud.Cluster
 	IAMService() *iam.Service
 	Project() string
+	ProjectNumber() (int64, error)
 	WorkloadIdentityPoolSpec() *iam.WorkloadIdentityPool
 	WorkloadIdentityProviderSpec() *iam.WorkloadIdentityPoolProvider
 }
 
 // Service implements workloadidentity reconciler.
 type Service struct {
-	scope Scope
-	// workloadIdentityPools workloadIdentityPoolsInterface
-
-	widp  *iam.ProjectsLocationsWorkloadIdentityPoolsService
-	widpp *iam.ProjectsLocationsWorkloadIdentityPoolsProvidersService
+	scope         Scope
+	projectNumber int64
+	widp          *iam.ProjectsLocationsWorkloadIdentityPoolsService
+	widpp         *iam.ProjectsLocationsWorkloadIdentityPoolsProvidersService
 }
 
 var _ cloud.Reconciler = &Service{}
@@ -52,17 +53,31 @@ func New(scope Scope) *Service {
 		log.Fatalln("IAMService is nil")
 	}
 
+	projectNumber, err := scope.ProjectNumber()
+	if err != nil {
+		log.Fatalf("failed to get project number: %v", err)
+	}
+
 	return &Service{
-		scope: scope,
-		widp:  iam.NewProjectsLocationsWorkloadIdentityPoolsService(scope.IAMService()),
-		widpp: iam.NewProjectsLocationsWorkloadIdentityPoolsProvidersService(scope.IAMService()),
+		scope:         scope,
+		projectNumber: projectNumber,
+		widp:          iam.NewProjectsLocationsWorkloadIdentityPoolsService(scope.IAMService()),
+		widpp:         iam.NewProjectsLocationsWorkloadIdentityPoolsProvidersService(scope.IAMService()),
 	}
 }
 
+// parent returns the parent path for the workload identity pool and provider.
+// The parent path is in the format:
+// projects/{project}/locations/global
+// where {project} is the project ID.
 func (s *Service) parent() string {
 	return "projects/" + s.scope.Project() + "/locations/" + Location
 }
 
-// func (s *Service) buildPoolId(name string) string {
-// 	return s.scope.Project() + "/" + Location + "/" + name
-// }
+// parentByProjectNumber returns the parent path for the workload identity pool and provider.
+// The parent path is in the format:
+// projects/{projectNumber}/locations/global
+// where {projectNumber} is the project number.
+func (s *Service) parentByProjectNumber() string {
+	return fmt.Sprintf("projects/%d/locations/%s", s.projectNumber, Location)
+}
