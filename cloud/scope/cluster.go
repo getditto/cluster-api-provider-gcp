@@ -292,12 +292,35 @@ func (s *ClusterScope) SubnetSpecs() []*compute.Subnetwork {
 
 // FirewallRulesSpec returns google compute firewall spec.
 func (s *ClusterScope) FirewallRulesSpec() []*compute.Firewall {
-	return createFirewallRules(
+	firewallRules := createFirewallRules(
 		s.Name(),
 		s.NetworkLink(),
 		s.GCPCluster.Spec.Network.Firewall.DefaultRulesManagement,
 		s.GCPCluster.Spec.Network.Firewall.FirewallRules,
 	)
+	// Ditto: allow ingress from each subnet's secondary ranges (e.g. pods) to the cluster nodes/control-plane.
+	for i, subnet := range s.GCPCluster.Spec.Network.Subnets {
+		for k, cidr := range subnet.SecondaryCidrBlocks {
+			firewallRules = append(firewallRules, &compute.Firewall{
+				Name:    fmt.Sprintf("allow-%s-%d-%s", s.Name(), i, k),
+				Network: s.NetworkLink(),
+				Allowed: []*compute.FirewallAllowed{
+					{
+						IPProtocol: "all",
+					},
+				},
+				Direction: "INGRESS",
+				SourceRanges: []string{
+					cidr,
+				},
+				TargetTags: []string{
+					s.Name() + "-control-plane",
+					s.Name() + "-node",
+				},
+			})
+		}
+	}
+	return firewallRules
 }
 
 // ANCHOR_END: ClusterFirewallSpec
@@ -350,10 +373,10 @@ func (s *ClusterScope) HealthCheckSpec(lbname string) *compute.HealthCheck {
 			PortSpecification: "USE_FIXED_PORT",
 			RequestPath:       "/readyz",
 		},
-		CheckIntervalSec:   10,
+		CheckIntervalSec:   5,
 		TimeoutSec:         5,
-		HealthyThreshold:   5,
-		UnhealthyThreshold: 3,
+		HealthyThreshold:   1,
+		UnhealthyThreshold: 6,
 	}
 }
 
